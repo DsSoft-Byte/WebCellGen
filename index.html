@@ -55,10 +55,13 @@
             });
 
             const handleChange = (key, value) => {
-                setParams(prev => ({
-                    ...prev,
-                    [key]: key === 'slanted' ? value : parseFloat(value) || 0
-                }));
+                if (key === 'slanted') {
+                    setParams(prev => ({ ...prev, [key]: value }));
+                } else if (key === 'series_cells' || key === 'parallel_cells') {
+                    setParams(prev => ({ ...prev, [key]: parseInt(value) || 1 }));
+                } else {
+                    setParams(prev => ({ ...prev, [key]: parseFloat(value) || 0 }));
+                }
             };
 
             const generateOpenSCAD = () => {
@@ -162,7 +165,7 @@
                                 <div className="flex items-center gap-3">
                                     <SettingsIcon />
                                     <div>
-                                        <h1 className="text-3xl font-bold"> Ds Battery Spacer Generator</h1>
+                                        <h1 className="text-3xl font-bold">Ds Battery Spacer Generator</h1>
                                         <p className="text-blue-100 mt-1">Configure your battery pack parameters</p>
                                     </div>
                                 </div>
