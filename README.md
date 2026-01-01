@@ -2,7 +2,7 @@
 
 A tool for generating 3D-printable battery cell spacers with customizable parameters. Create precise OpenSCAD files for both linear and slanted (hexagonal) battery pack layouts with integrated BMS wire routing holes.
 
-![Battery Spacer Generator](https://img.shields.io/badge/OpenSCAD-Compatible-blue) ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C) ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green?style=plastic)
+![Battery Spacer Generator](https://img.shields.io/badge/OpenSCAD-Compatible-blue) ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C) ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-green)
 
 ## Features
 
