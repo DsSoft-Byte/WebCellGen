@@ -439,14 +439,10 @@
                     const cell = getCellCenter(x, row);
                     rowCells.push(cell.x);
                 }
-                // Add positions between cells
                 for (let i = 0; i < rowCells.length - 1; i++) {
                     const midX = (rowCells[i] + rowCells[i + 1]) / 2;
                     gaps.push(midX);
                 }
-                // Add position after last cell (closer to the cell, adjusted for layout)
-                const lastCellOffset = params.slanted ? r + params.wall / 2 : r * 0.8;
-                gaps.push(rowCells[rowCells.length - 1] + lastCellOffset);
                 return gaps;
             };
 
