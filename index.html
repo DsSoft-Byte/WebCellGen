@@ -3,324 +3,583 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battery Spacer Generator</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Battery Cell Spacer Generator</title>
     <style>
-        body {
+        * {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-                sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #94a3b8;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(251, 146, 60, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(251, 146, 60, 0.2);
+        }
+
+        .card-header svg {
+            color: #f97316;
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .param-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .param-group label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        .param-group input[type="number"] {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: #e2e8f0;
+            font-size: 1rem;
+            width: 100%;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .param-group input[type="number"]:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            accent-color: #f97316;
+            cursor: pointer;
+        }
+
+        .checkbox-group span {
+            font-size: 0.875rem;
+            color: #e2e8f0;
+        }
+
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .preview-dimensions {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        #preview-svg {
+            background: #0f172a;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+        }
+
+        .legend-dot.body {
+            background: #374151;
+            border: 1px solid #4b5563;
+        }
+
+        .legend-dot.cell {
+            background: #0f172a;
+            border: 2px solid #f97316;
+        }
+
+        .legend-dot.wire {
+            background: #f97316;
+        }
+
+        .download-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(251, 146, 60, 0.2);
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(249, 115, 22, 0.5);
+        }
+
+        .download-btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f97316;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="container">
+        <header>
+            <h1>⚡ Battery Cell Spacer Generator</h1>
+            <p>Configure parameters and download OpenSCAD file</p>
+        </header>
 
-    <script type="text/babel">
-        const { useState } = React;
+        <div class="main-grid">
+            <!-- Parameters Panel -->
+            <div class="card">
+                <div class="card-header">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <h2>Parameters</h2>
+                </div>
 
-        const SettingsIcon = () => (
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-        );
+                <div class="params-grid">
+                    <div class="param-group">
+                        <label for="series_cells">Series Cells</label>
+                        <input type="number" id="series_cells" value="6" min="1" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label for="parallel_cells">Parallel Cells</label>
+                        <input type="number" id="parallel_cells" value="5" min="1" max="50">
+                    </div>
+                    <div class="param-group">
+                        <label for="cell_d">Cell Diameter (mm)</label>
+                        <input type="number" id="cell_d" value="18.3" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label for="adjust">Adjustment (mm)</label>
+                        <input type="number" id="adjust" value="0.2" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label for="wall">Wall Thickness (mm)</label>
+                        <input type="number" id="wall" value="5.0" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label for="height">Height (mm)</label>
+                        <input type="number" id="height" value="12.0" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label for="corner_r">Corner Radius (mm)</label>
+                        <input type="number" id="corner_r" value="8.0" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label for="wire_d">Wire Hole Diameter (mm)</label>
+                        <input type="number" id="wire_d" value="3.0" step="0.1">
+                    </div>
+                    <div class="param-group">
+                        <label for="ring_h">Ring Height (mm)</label>
+                        <input type="number" id="ring_h" value="0.4" step="0.1">
+                    </div>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="slanted" checked>
+                        <span>Slanted (Honeycomb) Layout</span>
+                    </label>
+                </div>
 
-        const DownloadIcon = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-        );
+                <div class="download-section">
+                    <button class="download-btn" onclick="downloadOpenSCAD()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download OpenSCAD File
+                    </button>
+                </div>
+            </div>
 
-        const BatterySpacerGUI = () => {
-            const [params, setParams] = useState({
-                series_cells: 6,
-                parallel_cells: 5,
-                slanted: true,
-                cell_d: 18.3,
-                adjust: 0.2,
-                wall: 5.0,
-                height: 12.0,
-                corner_r: 8.0,
-                wire_d: 3.0,
-                ring_h: 0.4
-            });
+            <!-- Preview Panel -->
+            <div class="card">
+                <div class="card-header">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="9" cy="9" r="2"/>
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                    </svg>
+                    <h2>Preview</h2>
+                </div>
 
-            const handleChange = (key, value) => {
-                if (key === 'slanted') {
-                    setParams(prev => ({ ...prev, [key]: value }));
-                } else if (key === 'series_cells' || key === 'parallel_cells') {
-                    setParams(prev => ({ ...prev, [key]: parseInt(value) || 1 }));
-                } else {
-                    setParams(prev => ({ ...prev, [key]: parseFloat(value) || 0 }));
-                }
-            };
-
-            const generateOpenSCAD = () => {
-                const d = params.cell_d + params.adjust;
-                const r = d * 0.5;
-                const spacing = d * 1.042;
-                const row_h = params.slanted ? spacing * 0.866 : spacing;
-                const body_w = (params.series_cells - 1) * spacing + d + 
-                            (params.slanted ? spacing * 0.5 : 0.0) + 2 * params.wall;
-                const body_h = (params.parallel_cells - 1) * row_h + d + 2 * params.wall;
-                const hole_r = params.wire_d * 0.5;
-
-                const cellCenter = (x, y) => {
-                    const ox = (params.slanted && (y & 1)) ? spacing * 0.5 : 0.0;
-                    return {
-                        x: x * spacing + ox + r + params.wall,
-                        y: y * row_h + r + params.wall
-                    };
-                };
-
-                const gapXForRow = (row) => {
-                    const xs = [];
-                    const max_gaps = params.slanted ? params.series_cells : params.series_cells + 1;
-                    for (let i = 0; i < max_gaps; i++) {
-                        const ox = (params.slanted && (row & 1)) ? spacing * 0.5 : 0.0;
-                        const x = i * spacing + r + params.wall + spacing * 0.5 + ox;
-                        // More lenient boundary check - only exclude if way outside
-                        if (x > 0 && x < body_w) {
-                            xs.push(x);
-                        }
-                    }
-                    return xs;
-                };
-
-                const balancer_holes = [];
-                const top_row = 0;
-                const bottom_row = params.parallel_cells - 1;
-                const y_top = body_h - params.wall - hole_r;
-                const y_bottom = params.wall + hole_r;
-
-                for (const x of gapXForRow(top_row)) {
-                    balancer_holes.push({ x, y: y_top });
-                }
-                for (const x of gapXForRow(bottom_row)) {
-                    balancer_holes.push({ x, y: y_bottom });
-                }
-
-                let scad = '';
-                scad += `module cell(){cylinder(h=${params.height + 2},d=${d},$fn=100);}\n`;
-                scad += `module ring(){difference(){`;
-                scad += `cylinder(h=${params.ring_h},d=${d + 0.5},$fn=100);`;
-                scad += `cylinder(h=${params.ring_h},d=${d * 0.6},$fn=100);`;
-                scad += `}}\n`;
-                scad += `module bh(){cylinder(h=${params.height + 2},d=${params.wire_d},$fn=40);}\n`;
-                scad += `difference(){\n`;
-                scad += `linear_extrude(${params.height}) `;
-                scad += `offset(r=${params.corner_r})`;
-                scad += `offset(delta=-${params.corner_r})`;
-                scad += `square([${body_w},${body_h}]);\n`;
-
-                for (let y = 0; y < params.parallel_cells; y++) {
-                    for (let x = 0; x < params.series_cells; x++) {
-                        const c = cellCenter(x, y);
-                        scad += `translate([${c.x},${c.y},-1])cell();\n`;
-                    }
-                }
-
-                for (const h of balancer_holes) {
-                    scad += `translate([${h.x},${h.y},-1])bh();\n`;
-                }
-
-                scad += `}\n`;
-
-                for (let y = 0; y < params.parallel_cells; y++) {
-                    for (let x = 0; x < params.series_cells; x++) {
-                        const c = cellCenter(x, y);
-                        scad += `translate([${c.x},${c.y},${params.height - params.ring_h}])ring();\n`;
-                    }
-                }
-
-                return scad;
-            };
-
-            const downloadFile = () => {
-                const content = generateOpenSCAD();
-                const blob = new Blob([content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'battery_spacer.scad';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-                                <div className="flex items-center gap-3">
-                                    <SettingsIcon />
-                                    <div>
-                                        <h1 className="text-3xl font-bold">Battery Spacer Generator</h1>
-                                        <p className="text-blue-100 mt-1">Configure your battery pack parameters</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Series Cells
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={params.series_cells}
-                                            onChange={(e) => handleChange('series_cells', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Parallel Cells
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={params.parallel_cells}
-                                            onChange={(e) => handleChange('parallel_cells', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Cell Diameter (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.cell_d}
-                                            onChange={(e) => handleChange('cell_d', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Adjustment (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.adjust}
-                                            onChange={(e) => handleChange('adjust', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Wall Thickness (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.wall}
-                                            onChange={(e) => handleChange('wall', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Height (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.height}
-                                            onChange={(e) => handleChange('height', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Corner Radius (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.corner_r}
-                                            onChange={(e) => handleChange('corner_r', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Wire Hole Diameter (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.wire_d}
-                                            onChange={(e) => handleChange('wire_d', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Ring Height (mm)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={params.ring_h}
-                                            onChange={(e) => handleChange('ring_h', e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center">
-                                        <label className="flex items-center cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={params.slanted}
-                                                onChange={(e) => handleChange('slanted', e.target.checked)}
-                                                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                            />
-                                            <span className="ml-3 text-sm font-medium text-gray-700">
-                                                Slanted Layout
-                                            </span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="mt-8 flex justify-end">
-                                    <button
-                                        onClick={downloadFile}
-                                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
-                                    >
-                                        <DownloadIcon />
-                                        Download OpenSCAD File
-                                    </button>
-                                </div>
-                            </div>
+                <div class="preview-container">
+                    <div class="preview-dimensions" id="dimensions">-- × -- mm</div>
+                    <svg id="preview-svg" width="400" height="300"></svg>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot body"></div>
+                            <span>Body</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot cell"></div>
+                            <span>Cell</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot wire"></div>
+                            <span>Wire Hole</span>
                         </div>
                     </div>
                 </div>
-            );
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-cells">30</div>
+                        <div class="stat-label">Total Cells</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="config">6S5P</div>
+                        <div class="stat-label">Configuration</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="wire-holes">10</div>
+                        <div class="stat-label">Wire Holes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get all input elements
+        const inputs = {
+            series_cells: document.getElementById('series_cells'),
+            parallel_cells: document.getElementById('parallel_cells'),
+            cell_d: document.getElementById('cell_d'),
+            adjust: document.getElementById('adjust'),
+            wall: document.getElementById('wall'),
+            height: document.getElementById('height'),
+            corner_r: document.getElementById('corner_r'),
+            wire_d: document.getElementById('wire_d'),
+            ring_h: document.getElementById('ring_h'),
+            slanted: document.getElementById('slanted')
         };
 
-        ReactDOM.render(<BatterySpacerGUI />, document.getElementById('root'));
+        // Get params from inputs
+        function getParams() {
+            return {
+                series_cells: parseInt(inputs.series_cells.value) || 1,
+                parallel_cells: parseInt(inputs.parallel_cells.value) || 1,
+                cell_d: parseFloat(inputs.cell_d.value) || 18.3,
+                adjust: parseFloat(inputs.adjust.value) || 0.2,
+                wall: parseFloat(inputs.wall.value) || 5.0,
+                height: parseFloat(inputs.height.value) || 12.0,
+                corner_r: parseFloat(inputs.corner_r.value) || 8.0,
+                wire_d: parseFloat(inputs.wire_d.value) || 3.0,
+                ring_h: parseFloat(inputs.ring_h.value) || 0.4,
+                slanted: inputs.slanted.checked
+            };
+        }
+
+        // Calculate geometry
+        function calculateGeometry(params) {
+            const d = params.cell_d + params.adjust;
+            const r = d * 0.5;
+            const spacing = d * 1.042;
+            const row_h = params.slanted ? spacing * 0.866 : spacing;
+
+            const body_w = (params.series_cells - 1) * spacing + d + 
+                        (params.slanted ? spacing * 0.5 : 0.0) + 2 * params.wall;
+            const body_h = (params.parallel_cells - 1) * row_h + d + 2 * params.wall;
+
+            const cells = [];
+
+            const getCellCenter = (x, y) => {
+                const ox = (params.slanted && (y & 1)) ? spacing * 0.5 : 0.0;
+                return {
+                    x: x * spacing + ox + r + params.wall,
+                    y: y * row_h + r + params.wall
+                };
+            };
+
+            for (let y = 0; y < params.parallel_cells; y++) {
+                for (let x = 0; x < params.series_cells; x++) {
+                    cells.push(getCellCenter(x, y));
+                }
+            }
+
+            // Balancer holes between adjacent cells
+            const balancerHoles = [];
+            const topRow = params.parallel_cells - 1;
+            const y_top = body_h - params.wall / 2;
+            const y_bottom = params.wall / 2;
+
+            const getGapPositions = (row) => {
+                const gaps = [];
+                const rowCells = [];
+                for (let x = 0; x < params.series_cells; x++) {
+                    const cell = getCellCenter(x, row);
+                    rowCells.push(cell.x);
+                }
+                for (let i = 0; i < rowCells.length - 1; i++) {
+                    const midX = (rowCells[i] + rowCells[i + 1]) / 2;
+                    gaps.push(midX);
+                }
+                return gaps;
+            };
+
+            for (const x of getGapPositions(topRow)) {
+                balancerHoles.push({ x, y: y_top });
+            }
+            for (const x of getGapPositions(0)) {
+                balancerHoles.push({ x, y: y_bottom });
+            }
+
+            return {
+                bodyWidth: body_w,
+                bodyHeight: body_h,
+                cells,
+                balancerHoles,
+                cellDiameter: d,
+                wireDiameter: params.wire_d
+            };
+        }
+
+        // Update preview
+        function updatePreview() {
+            const params = getParams();
+            const geometry = calculateGeometry(params);
+            const { bodyWidth, bodyHeight, cells, balancerHoles, cellDiameter, wireDiameter } = geometry;
+
+            const padding = 10;
+            const viewBoxWidth = bodyWidth + padding * 2;
+            const viewBoxHeight = bodyHeight + padding * 2;
+
+            const scale = Math.min(400 / viewBoxWidth, 300 / viewBoxHeight);
+            const svgWidth = viewBoxWidth * scale;
+            const svgHeight = viewBoxHeight * scale;
+
+            const svg = document.getElementById('preview-svg');
+            svg.setAttribute('width', svgWidth);
+            svg.setAttribute('height', svgHeight);
+            svg.setAttribute('viewBox', `${-padding} ${-padding} ${viewBoxWidth} ${viewBoxHeight}`);
+
+            let content = `
+                <defs>
+                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#334155" stroke-width="0.2"/>
+                    </pattern>
+                </defs>
+                <rect x="${-padding}" y="${-padding}" width="${viewBoxWidth}" height="${viewBoxHeight}" fill="url(#grid)"/>
+                <rect x="0" y="0" width="${bodyWidth}" height="${bodyHeight}" rx="${params.corner_r}" ry="${params.corner_r}" fill="#374151"/>
+            `;
+
+            // Cell holes
+            for (const cell of cells) {
+                content += `
+                    <circle cx="${cell.x}" cy="${cell.y}" r="${cellDiameter / 2}" fill="#0f172a"/>
+                    <circle cx="${cell.x}" cy="${cell.y}" r="${cellDiameter / 2 + 0.25}" fill="none" stroke="#f97316" stroke-width="0.5"/>
+                    <circle cx="${cell.x}" cy="${cell.y}" r="${cellDiameter * 0.3}" fill="none" stroke="#64748b" stroke-width="0.3" stroke-dasharray="2,2"/>
+                `;
+            }
+
+            // Balancer holes
+            for (const hole of balancerHoles) {
+                content += `<circle cx="${hole.x}" cy="${hole.y}" r="${wireDiameter / 2}" fill="#f97316"/>`;
+            }
+
+            svg.innerHTML = content;
+
+            // Update dimensions and stats
+            document.getElementById('dimensions').textContent = `${bodyWidth.toFixed(1)} × ${bodyHeight.toFixed(1)} mm`;
+            document.getElementById('total-cells').textContent = params.series_cells * params.parallel_cells;
+            document.getElementById('config').textContent = `${params.series_cells}S${params.parallel_cells}P`;
+            document.getElementById('wire-holes').textContent = balancerHoles.length;
+        }
+
+        // Generate OpenSCAD code
+        function generateOpenSCAD() {
+            const params = getParams();
+            const geometry = calculateGeometry(params);
+            const { bodyWidth, bodyHeight, cells, balancerHoles, cellDiameter, wireDiameter } = geometry;
+
+            let scad = `// Battery Spacer - ${params.series_cells}S${params.parallel_cells}P Configuration\n`;
+            scad += `// Generated by Battery Spacer Generator\n\n`;
+
+            scad += `module cell(){cylinder(h=${params.height + 2},d=${cellDiameter},$fn=100);}\n`;
+            scad += `module ring(){difference(){\n`;
+            scad += `  cylinder(h=${params.ring_h},d=${cellDiameter + 0.5},$fn=100);\n`;
+            scad += `  cylinder(h=${params.ring_h},d=${cellDiameter * 0.6},$fn=100);\n`;
+            scad += `}}\n`;
+            scad += `module bh(){cylinder(h=${params.height + 2},d=${wireDiameter},$fn=40);}\n\n`;
+
+            scad += `difference(){\n`;
+            scad += `  linear_extrude(${params.height})\n`;
+            scad += `    offset(r=${params.corner_r})\n`;
+            scad += `    offset(delta=-${params.corner_r})\n`;
+            scad += `    square([${bodyWidth.toFixed(3)},${bodyHeight.toFixed(3)}]);\n\n`;
+
+            scad += `  // Cell holes\n`;
+            for (const cell of cells) {
+                scad += `  translate([${cell.x.toFixed(3)},${cell.y.toFixed(3)},-1])cell();\n`;
+            }
+
+            scad += `\n  // Balancer wire holes\n`;
+            for (const hole of balancerHoles) {
+                scad += `  translate([${hole.x.toFixed(3)},${hole.y.toFixed(3)},-1])bh();\n`;
+            }
+
+            scad += `}\n\n`;
+
+            scad += `// Cell retention rings\n`;
+            for (const cell of cells) {
+                scad += `translate([${cell.x.toFixed(3)},${cell.y.toFixed(3)},${params.height - params.ring_h}])ring();\n`;
+            }
+
+            return scad;
+        }
+
+        // Download function
+        function downloadOpenSCAD() {
+            const params = getParams();
+            const content = generateOpenSCAD();
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `battery_spacer_${params.series_cells}s${params.parallel_cells}p.scad`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Add event listeners to all inputs
+        for (const key in inputs) {
+            inputs[key].addEventListener('input', updatePreview);
+            inputs[key].addEventListener('change', updatePreview);
+        }
+
+        // Initial render
+        updatePreview();
     </script>
 </body>
 </html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Spacer Generator</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const SettingsIcon = () => (
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        );
+
+        const DownloadIcon = () => (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        );
+
+        const BatterySpacerGUI = () => {
+            const [params, setParams] = useState({
+                series_cells: 6,
+                parallel_cells: 5,
+                slanted: true,
+                cell_d: 18.3,
+                adjust: 0.2,
+                wall: 5.0,
+                height: 12.0,
+                corner_r: 8.0,
+                wire_d: 3.0,
+                ring_h: 0.4
+            });
+
+            const handleChange = (key, value) => {
+                if (key === 'slanted') {
+                    setParams(prev => ({ ...prev, [key]: value }));
+                } else if (key === 'series_cells' || key === 'parallel_cells') {
+                    setParams(prev => ({ ...prev, [key]: parseInt(value) || 1 }));
+                } else {
+                    setParams(prev => ({ ...prev, [key]: parseFloat(value) || 0 }));
+                }
+            };
+
+            const generateOpenSCAD = () => {
+                const d = params.cell_d + params.adjust;
+                const r = d * 0.5;
+                const spacing = d * 1.042;
+                const row_h = params.slanted ? spacing * 0.866 : spacing;
+                const body_w = (params.series_cells - 1) * spacing + d + 
+                            (params.slanted ? spacing * 0.5 : 0.0) + 2 * params.wall;
+                const body_h = (params.parallel_cells - 1) * row_h + d + 2 * params.wall;
+                const hole_r = params.wire_d * 0.5;
+
+                const cellCenter = (x, y) => {
+                    const ox = (params.slanted && (y & 1)) ? spacing * 0.5 : 0.0;
+                    return {
+                        x: x * spacing + ox + r + params.wall,
+                        y: y * row_h + r + params.wall
+                    };
+                };
+
+                const gapXForRow = (row) => {
+                    const xs = [];
+                    const max_gaps = params.slanted ? params.series_cells : params.series_cells + 1;
+                    for (let i = 0; i < max_gaps; i++) {
+                        const ox = (params.slanted && (row & 1)) ? spacing * 0.5 : 0.0;
+                        const x = i * spacing + r + params.wall + spacing * 0.5 + ox;
+                        // More lenient boundary check - only exclude if way outside
+                        if (x > 0 && x < body_w) {
+                            xs.push(x);
+                        }
+                    }
+                    return xs;
+                };
+
+                const balancer_holes = [];
+                const top_row = 0;
+                const bottom_row = params.parallel_cells - 1;
+                const y_top = body_h - params.wall - hole_r;
+                const y_bottom = params.wall + hole_r;
+
+                for (const x of gapXForRow(top_row)) {
+                    balancer_holes.push({ x, y: y_top });
+                }
+                for (const x of gapXForRow(bottom_row)) {
+                    balancer_holes.push({ x, y: y_bottom });
+                }
+
+                let scad = '';
+                scad += `module cell(){cylinder(h=${params.height + 2},d=${d},$fn=100);}\n`;
+                scad += `module ring(){difference(){`;
+                scad += `cylinder(h=${params.ring_h},d=${d + 0.5},$fn=100);`;
+                scad += `cylinder(h=${params.ring_h},d=${d * 0.6},$fn=100);`;
+                scad += `}}\n`;
+                scad += `module bh(){cylinder(h=${params.height + 2},d=${params.wire_d},$fn=40);}\n`;
+                scad += `difference(){\n`;
+                scad += `linear_extrude(${params.height}) `;
+                scad += `offset(r=${params.corner_r})`;
+                scad += `offset(delta=-${params.corner_r})`;
+                scad += `square([${body_w},${body_h}]);\n`;
+
+                for (let y = 0; y < params.parallel_cells; y++) {
+                    for (let x = 0; x < params.series_cells; x++) {
+                        const c = cellCenter(x, y);
+                        scad += `translate([${c.x},${c.y},-1])cell();\n`;
+                    }
+                }
+
+                for (const h of balancer_holes) {
+                    scad += `translate([${h.x},${h.y},-1])bh();\n`;
+                }
+
+                scad += `}\n`;
+
+                for (let y = 0; y < params.parallel_cells; y++) {
+                    for (let x = 0; x < params.series_cells; x++) {
+                        const c = cellCenter(x, y);
+                        scad += `translate([${c.x},${c.y},${params.height - params.ring_h}])ring();\n`;
+                    }
+                }
+
+                return scad;
+            };
+
+            const downloadFile = () => {
+                const content = generateOpenSCAD();
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'battery_spacer.scad';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+                            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+                                <div className="flex items-center gap-3">
+                                    <SettingsIcon />
+                                    <div>
+                                        <h1 className="text-3xl font-bold">Battery Spacer Generator</h1>
+                                        <p className="text-blue-100 mt-1">Configure your battery pack parameters</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Series Cells
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={params.series_cells}
+                                            onChange={(e) => handleChange('series_cells', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Parallel Cells
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={params.parallel_cells}
+                                            onChange={(e) => handleChange('parallel_cells', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Cell Diameter (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.cell_d}
+                                            onChange={(e) => handleChange('cell_d', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Adjustment (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.adjust}
+                                            onChange={(e) => handleChange('adjust', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Wall Thickness (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.wall}
+                                            onChange={(e) => handleChange('wall', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Height (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.height}
+                                            onChange={(e) => handleChange('height', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Corner Radius (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.corner_r}
+                                            onChange={(e) => handleChange('corner_r', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Wire Hole Diameter (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.wire_d}
+                                            onChange={(e) => handleChange('wire_d', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Ring Height (mm)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={params.ring_h}
+                                            onChange={(e) => handleChange('ring_h', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center">
+                                        <label className="flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={params.slanted}
+                                                onChange={(e) => handleChange('slanted', e.target.checked)}
+                                                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="ml-3 text-sm font-medium text-gray-700">
+                                                Slanted Layout
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex justify-end">
+                                    <button
+                                        onClick={downloadFile}
+                                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+                                    >
+                                        <DownloadIcon />
+                                        Download OpenSCAD File
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<BatterySpacerGUI />, document.getElementById('root'));
+    </script>
+</body>
+</html>
